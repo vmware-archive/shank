@@ -51,7 +51,7 @@ func flagForType(name string, typ reflect.Type, usage string) (cli.Flag, bool) {
 	case reflect.String:
 		return cli.StringFlag{name, "", usage}, true
 	default:
-		return JSONFlag{typ, cli.StringFlag{name, "", "(json) " + usage}}, true
+		return JSONFlag{typ, cli.StringFlag{name, "", usage}}, true
 	}
 
 	return nil, false
