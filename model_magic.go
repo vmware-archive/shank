@@ -50,10 +50,6 @@ func flagForType(name string, typ reflect.Type, usage string) (cli.Flag, bool) {
 		return flagForType(name, typ.Elem(), usage)
 	case reflect.String:
 		return cli.StringFlag{name, "", usage}, true
-	case reflect.Uint32:
-		return cli.IntFlag{name, 0, usage}, true
-	case reflect.Bool:
-		return cli.BoolFlag{name, usage}, true
 	default:
 		return JSONFlag{typ, cli.StringFlag{name, "", "(json) " + usage}}, true
 	}
@@ -81,14 +77,6 @@ func requestFromInput(request reflect.Value, flags []cli.Flag, c *cli.Context) p
 			str := c.String(flag.Name)
 			field.Set(reflect.ValueOf(&str))
 
-		case cli.IntFlag:
-			num := uint32(c.Int(flag.Name))
-			field.Set(reflect.ValueOf(&num))
-
-		case cli.BoolFlag:
-			val := c.Bool(flag.Name)
-			field.Set(reflect.ValueOf(&val))
-
 		case JSONFlag:
 			val := reflect.New(flag.Flag.(JSONFlag).Type)
 
@@ -99,7 +87,11 @@ func requestFromInput(request reflect.Value, flags []cli.Flag, c *cli.Context) p
 				os.Exit(1)
 			}
 
-			field.Set(reflect.Indirect(val))
+			if field.Type().Kind() == reflect.Ptr {
+				field.Set(val)
+			} else {
+				field.Set(reflect.Indirect(val))
+			}
 		}
 	}
 
