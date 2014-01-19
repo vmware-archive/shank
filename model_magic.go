@@ -1,13 +1,13 @@
 package main
 
 import (
-	"reflect"
-	"strings"
 	"encoding/json"
 	"os"
+	"reflect"
+	"strings"
 
-	"github.com/codegangsta/cli"
 	"code.google.com/p/gogoprotobuf/proto"
+	"github.com/codegangsta/cli"
 )
 
 func flagForField(field reflect.StructField, usage map[string]string) (*Flag, bool) {

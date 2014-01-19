@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"reflect"
 	"strings"
 
@@ -12,6 +13,8 @@ import (
 	"github.com/vito/gordon"
 	"github.com/vito/gordon/warden"
 )
+
+var shankRCFile = filepath.Join(os.Getenv("HOME"), ".shankrc")
 
 func main() {
 	app := cli.NewApp()
@@ -24,6 +27,23 @@ func main() {
 	}
 
 	app.Commands = []cli.Command{
+		{
+			Name:  "target",
+			Usage: "Save -network and -addr to ~/.shankrc.",
+			Action: func(c *cli.Context) {
+				file, err := os.OpenFile(shankRCFile, os.O_CREATE|os.O_WRONLY, 0644)
+				if err != nil {
+					panic("cannot write to " + shankRCFile)
+				}
+
+				encoder := json.NewEncoder(file)
+				encoder.Encode(map[string]string{
+					"network": c.GlobalString("network"),
+					"addr":    c.GlobalString("addr"),
+				})
+			},
+		},
+
 		generateCommand(reflect.ValueOf(&warden.CopyInRequest{})),
 		generateCommand(reflect.ValueOf(&warden.CopyOutRequest{})),
 		generateCommand(reflect.ValueOf(&warden.CreateRequest{})),
@@ -72,10 +92,7 @@ func generateCommand(request reflect.Value) cli.Command {
 		Usage:       usage.Usage,
 		Description: usage.Description,
 		Action: func(c *cli.Context) {
-			cp := &gordon.ConnectionInfo{
-				Network: c.GlobalString("network"),
-				Addr:    c.GlobalString("addr"),
-			}
+			cp := connectionInfo(c)
 
 			conn, err := cp.ProvideConnection()
 			if err != nil {
@@ -96,5 +113,26 @@ func generateCommand(request reflect.Value) cli.Command {
 			encoder := json.NewEncoder(os.Stdout)
 			encoder.Encode(res)
 		},
+	}
+}
+
+func connectionInfo(c *cli.Context) gordon.ConnectionProvider {
+	config := map[string]string{
+		"network": c.GlobalString("network"),
+		"addr":    c.GlobalString("addr"),
+	}
+
+	file, err := os.Open(shankRCFile)
+	if err == nil {
+		decoder := json.NewDecoder(file)
+		err := decoder.Decode(&config)
+		if err != nil {
+			panic("cannot decode " + shankRCFile + ": " + err.Error())
+		}
+	}
+
+	return &gordon.ConnectionInfo{
+		Network: config["network"],
+		Addr:    config["addr"],
 	}
 }
