@@ -1,8 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"encoding/json"
+	"fmt"
 	"os"
 	"reflect"
 	"strings"
@@ -53,24 +53,28 @@ func generateCommand(request reflect.Value) cli.Command {
 
 	commandName := lowercase(strings.TrimSuffix(typ.Name(), "Request"))
 
+	usage := USAGE[commandName]
+
 	flags := []cli.Flag{}
 
 	for i := 0; i < typ.NumField(); i++ {
 		field := typ.Field(i)
 
-		flag, ok := flagForField(field)
+		flag, ok := flagForField(field, usage.Flags)
 		if ok {
 			flags = append(flags, flag)
 		}
 	}
 
 	return cli.Command{
-		Name:  commandName,
-		Flags: flags,
+		Name:        commandName,
+		Flags:       flags,
+		Usage:       usage.Usage,
+		Description: usage.Description,
 		Action: func(c *cli.Context) {
 			cp := &gordon.ConnectionInfo{
 				Network: c.GlobalString("network"),
-				Addr: c.GlobalString("addr"),
+				Addr:    c.GlobalString("addr"),
 			}
 
 			conn, err := cp.ProvideConnection()

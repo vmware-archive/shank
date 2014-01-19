@@ -10,14 +10,14 @@ import (
 	"code.google.com/p/gogoprotobuf/proto"
 )
 
-func flagForField(field reflect.StructField) (*Flag, bool) {
+func flagForField(field reflect.StructField, usage map[string]string) (*Flag, bool) {
 	if strings.HasPrefix(field.Name, "XXX") {
 		return nil, false
 	}
 
 	flagName := lowercase(field.Name)
 
-	flag, ok := flagForType(flagName, field.Type)
+	flag, ok := flagForType(flagName, field.Type, usage[flagName])
 	if !ok {
 		return nil, false
 	}
@@ -44,23 +44,19 @@ func flagForField(field reflect.StructField) (*Flag, bool) {
 	}, ok
 }
 
-func flagForType(name string, typ reflect.Type) (cli.Flag, bool) {
+func flagForType(name string, typ reflect.Type, usage string) (cli.Flag, bool) {
 	switch typ.Kind() {
 	case reflect.Ptr:
-		return flagForType(name, typ.Elem())
+		return flagForType(name, typ.Elem(), usage)
 	case reflect.String:
-		return cli.StringFlag{name, "", "string value"}, true
+		return cli.StringFlag{name, "", usage}, true
 	case reflect.Uint32:
-		return cli.IntFlag{name, 0, "integer value"}, true
+		return cli.IntFlag{name, 0, usage}, true
 	default:
-		return JSONFlag{typ, cli.StringFlag{name, "", "json value"}}, true
+		return JSONFlag{typ, cli.StringFlag{name, "", "(json) " + usage}}, true
 	}
 
 	return nil, false
-}
-
-func lowercase(str string) string {
-	return strings.ToLower(str[:1]) + str[1:]
 }
 
 func requestFromInput(request reflect.Value, flags []cli.Flag, c *cli.Context) proto.Message {
