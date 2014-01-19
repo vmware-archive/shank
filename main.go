@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"reflect"
@@ -9,6 +8,7 @@ import (
 
 	"github.com/codegangsta/cli"
 
+	"github.com/vito/gordon"
 	"github.com/vito/gordon/warden"
 )
 
@@ -16,6 +16,11 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "shank"
 	app.Usage = "Warden server CLI"
+
+	app.Flags = []cli.Flag{
+		cli.StringFlag{"network", "unix", "server network type (tcp, unix)"},
+		cli.StringFlag{"addr", "/tmp/warden.sock", "server network address"},
+	}
 
 	app.Commands = []cli.Command{
 		generateCommand(reflect.ValueOf(&warden.CopyInRequest{})),
@@ -57,49 +62,33 @@ func generateCommand(request reflect.Value) cli.Command {
 			flags = append(flags, flag)
 		}
 	}
-
 	return cli.Command{
 		Name:  commandName,
 		Flags: flags,
 		Action: func(c *cli.Context) {
-			for _, f := range flags {
-				flag := f.(*Flag)
-
-				if !c.IsSet(flag.Name) {
-					if flag.Required {
-						println("missing required flag '" + flag.Name + "'")
-						os.Exit(1)
-					}
-
-					continue
-				}
-
-				field := request.Elem().FieldByName(flag.Field)
-
-				switch flag.Flag.(type) {
-				case cli.StringFlag:
-					str := c.String(flag.Name)
-					field.Set(reflect.ValueOf(&str))
-
-				case cli.IntFlag:
-					num := uint32(c.Int(flag.Name))
-					field.Set(reflect.ValueOf(&num))
-
-				case JSONFlag:
-					val := reflect.New(flag.Flag.(JSONFlag).Type)
-
-					str := c.String(flag.Name)
-					err := json.Unmarshal([]byte(str), val.Interface())
-					if err != nil {
-						println(err.Error())
-						os.Exit(1)
-					}
-
-					field.Set(reflect.Indirect(val))
-				}
+			cp := &gordon.ConnectionInfo{
+				Network: c.GlobalString("network"),
+				Addr: c.GlobalString("addr"),
 			}
 
-			fmt.Println("request:", request.Interface())
+			conn, err := cp.ProvideConnection()
+			if err != nil {
+				fmt.Println("failed to connect to warden:", err)
+				os.Exit(1)
+			}
+
+			request := requestFromInput(request, flags, c)
+
+			response := warden.ResponseMessageForType(warden.TypeForMessage(request))
+
+			res, err := conn.RoundTrip(request, response)
+			if err != nil {
+				fmt.Println("request-response failed:", err)
+				os.Exit(1)
+			}
+
+			fmt.Println("request:", request)
+			fmt.Println("response:", res)
 		},
 	}
 }

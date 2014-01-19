@@ -3,8 +3,11 @@ package main
 import (
 	"reflect"
 	"strings"
+	"encoding/json"
+	"os"
 
 	"github.com/codegangsta/cli"
+	"code.google.com/p/gogoprotobuf/proto"
 )
 
 func flagForField(field reflect.StructField) (*Flag, bool) {
@@ -58,4 +61,45 @@ func flagForType(name string, typ reflect.Type) (cli.Flag, bool) {
 
 func lowercase(str string) string {
 	return strings.ToLower(str[:1]) + str[1:]
+}
+
+func requestFromInput(request reflect.Value, flags []cli.Flag, c *cli.Context) proto.Message {
+	for _, f := range flags {
+		flag := f.(*Flag)
+
+		if !c.IsSet(flag.Name) {
+			if flag.Required {
+				println("missing required flag '" + flag.Name + "'")
+				os.Exit(1)
+			}
+
+			continue
+		}
+
+		field := request.Elem().FieldByName(flag.Field)
+
+		switch flag.Flag.(type) {
+		case cli.StringFlag:
+			str := c.String(flag.Name)
+			field.Set(reflect.ValueOf(&str))
+
+		case cli.IntFlag:
+			num := uint32(c.Int(flag.Name))
+			field.Set(reflect.ValueOf(&num))
+
+		case JSONFlag:
+			val := reflect.New(flag.Flag.(JSONFlag).Type)
+
+			str := c.String(flag.Name)
+			err := json.Unmarshal([]byte(str), val.Interface())
+			if err != nil {
+				println(err.Error())
+				os.Exit(1)
+			}
+
+			field.Set(reflect.Indirect(val))
+		}
+	}
+
+	return request.Interface().(proto.Message)
 }
