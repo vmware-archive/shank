@@ -1,10 +1,10 @@
 package main
 
 import (
-	"flag"
-	"path/filepath"
-	"fmt"
 	"encoding/json"
+	"flag"
+	"fmt"
+	"path/filepath"
 
 	"github.com/vito/shank/usage"
 )
@@ -34,10 +34,10 @@ func main() {
 		"netIn":          usage.Parse(filepath.Join(*protobufs, "net_in.proto")),
 		"netOut":         usage.Parse(filepath.Join(*protobufs, "net_out.proto")),
 		"ping":           usage.Parse(filepath.Join(*protobufs, "ping.proto")),
-		//"run": usage.Parse(filepath.Join(*protobufs, "run.proto")),
-		"spawn":  usage.Parse(filepath.Join(*protobufs, "spawn.proto")),
-		"stop":   usage.Parse(filepath.Join(*protobufs, "stop.proto")),
-		"stream": usage.Parse(filepath.Join(*protobufs, "stream.proto")),
+		"run":            usage.Parse(filepath.Join(*protobufs, "run.proto")),
+		"spawn":          usage.Parse(filepath.Join(*protobufs, "spawn.proto")),
+		"stop":           usage.Parse(filepath.Join(*protobufs, "stop.proto")),
+		"stream":         usage.Parse(filepath.Join(*protobufs, "stream.proto")),
 	}
 
 	enc, err := json.Marshal(usage)
