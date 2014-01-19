@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"encoding/json"
 	"os"
 	"reflect"
 	"strings"
@@ -62,6 +63,7 @@ func generateCommand(request reflect.Value) cli.Command {
 			flags = append(flags, flag)
 		}
 	}
+
 	return cli.Command{
 		Name:  commandName,
 		Flags: flags,
@@ -87,8 +89,8 @@ func generateCommand(request reflect.Value) cli.Command {
 				os.Exit(1)
 			}
 
-			fmt.Println("request:", request)
-			fmt.Println("response:", res)
+			encoder := json.NewEncoder(os.Stdout)
+			encoder.Encode(res)
 		},
 	}
 }
