@@ -11,6 +11,7 @@ import (
 	"github.com/codegangsta/cli"
 
 	"github.com/vito/gordon"
+	"github.com/vito/gordon/connection"
 	"github.com/vito/gordon/warden"
 )
 
@@ -54,15 +55,13 @@ func main() {
 		generateCommand(reflect.ValueOf(&warden.LimitCpuRequest{})),
 		generateCommand(reflect.ValueOf(&warden.LimitDiskRequest{})),
 		generateCommand(reflect.ValueOf(&warden.LimitMemoryRequest{})),
-		generateCommand(reflect.ValueOf(&warden.LinkRequest{})),
 		generateCommand(reflect.ValueOf(&warden.ListRequest{})),
 		generateCommand(reflect.ValueOf(&warden.NetInRequest{})),
 		generateCommand(reflect.ValueOf(&warden.NetOutRequest{})),
 		generateCommand(reflect.ValueOf(&warden.PingRequest{})),
 		generateCommand(reflect.ValueOf(&warden.RunRequest{})),
-		generateCommand(reflect.ValueOf(&warden.SpawnRequest{})),
+		generateCommand(reflect.ValueOf(&warden.AttachRequest{})),
 		generateCommand(reflect.ValueOf(&warden.StopRequest{})),
-		generateCommand(reflect.ValueOf(&warden.StreamRequest{})),
 	}
 
 	app.Run(os.Args)
@@ -104,14 +103,31 @@ func generateCommand(request reflect.Value) cli.Command {
 
 			response := warden.ResponseMessageForType(warden.TypeForMessage(request))
 
+			encoder := json.NewEncoder(os.Stdout)
+
+			if commandName == "attach" {
+				err := conn.SendMessage(request)
+				if err != nil {
+					fmt.Println("request-response failed:", err)
+					os.Exit(1)
+				}
+
+				streamProcessPayloads(conn, encoder)
+
+				return
+			}
+
 			res, err := conn.RoundTrip(request, response)
 			if err != nil {
 				fmt.Println("request-response failed:", err)
 				os.Exit(1)
 			}
 
-			encoder := json.NewEncoder(os.Stdout)
 			encoder.Encode(res)
+
+			if commandName == "run" {
+				streamProcessPayloads(conn, encoder)
+			}
 		},
 	}
 }
@@ -134,5 +150,23 @@ func connectionInfo(c *cli.Context) gordon.ConnectionProvider {
 	return &gordon.ConnectionInfo{
 		Network: config["network"],
 		Addr:    config["addr"],
+	}
+}
+
+func streamProcessPayloads(conn *connection.Connection, encoder *json.Encoder) {
+	for {
+		payload := &warden.ProcessPayload{}
+
+		res, err := conn.ReadResponse(payload)
+		if err != nil {
+			fmt.Println("stream failed:", err)
+			os.Exit(1)
+		}
+
+		encoder.Encode(res)
+
+		if payload.ExitStatus != nil {
+			break
+		}
 	}
 }

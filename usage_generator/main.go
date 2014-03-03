@@ -29,15 +29,13 @@ func main() {
 		"limitCpu":       usage.Parse(filepath.Join(*protobufs, "limit_cpu.proto")),
 		"limitDisk":      usage.Parse(filepath.Join(*protobufs, "limit_disk.proto")),
 		"limitMemory":    usage.Parse(filepath.Join(*protobufs, "limit_memory.proto")),
-		"link":           usage.Parse(filepath.Join(*protobufs, "link.proto")),
 		"list":           usage.Parse(filepath.Join(*protobufs, "list.proto")),
 		"netIn":          usage.Parse(filepath.Join(*protobufs, "net_in.proto")),
 		"netOut":         usage.Parse(filepath.Join(*protobufs, "net_out.proto")),
 		"ping":           usage.Parse(filepath.Join(*protobufs, "ping.proto")),
 		"run":            usage.Parse(filepath.Join(*protobufs, "run.proto")),
-		"spawn":          usage.Parse(filepath.Join(*protobufs, "spawn.proto")),
+		"attach":            usage.Parse(filepath.Join(*protobufs, "attach.proto")),
 		"stop":           usage.Parse(filepath.Join(*protobufs, "stop.proto")),
-		"stream":         usage.Parse(filepath.Join(*protobufs, "stream.proto")),
 	}
 
 	enc, err := json.Marshal(usage)
