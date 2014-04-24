@@ -10,9 +10,9 @@ import (
 
 	"github.com/codegangsta/cli"
 
+	warden "github.com/cloudfoundry-incubator/garden/protocol"
 	"github.com/cloudfoundry-incubator/gordon"
 	"github.com/cloudfoundry-incubator/gordon/connection"
-	"github.com/cloudfoundry-incubator/gordon/warden"
 )
 
 var shankRCFile = filepath.Join(os.Getenv("HOME"), ".shankrc")
