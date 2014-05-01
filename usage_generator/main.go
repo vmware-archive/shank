@@ -34,8 +34,9 @@ func main() {
 		"netOut":         usage.Parse(filepath.Join(*protobufs, "net_out.proto")),
 		"ping":           usage.Parse(filepath.Join(*protobufs, "ping.proto")),
 		"run":            usage.Parse(filepath.Join(*protobufs, "run.proto")),
-		"attach":            usage.Parse(filepath.Join(*protobufs, "attach.proto")),
+		"attach":         usage.Parse(filepath.Join(*protobufs, "attach.proto")),
 		"stop":           usage.Parse(filepath.Join(*protobufs, "stop.proto")),
+		"capacity":       usage.Parse(filepath.Join(*protobufs, "capacity.proto")),
 	}
 
 	enc, err := json.Marshal(usage)

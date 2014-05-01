@@ -62,6 +62,7 @@ func main() {
 		generateCommand(reflect.ValueOf(&warden.RunRequest{})),
 		generateCommand(reflect.ValueOf(&warden.AttachRequest{})),
 		generateCommand(reflect.ValueOf(&warden.StopRequest{})),
+		generateCommand(reflect.ValueOf(&warden.CapacityRequest{})),
 	}
 
 	app.Run(os.Args)
