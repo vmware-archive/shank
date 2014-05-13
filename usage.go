@@ -1,7 +1,7 @@
 package main
 
 import "encoding/json"
-import "github.com/vito/shank/usage"
+import "github.com/pivotal-cf-experimental/shank/usage"
 
 var USAGE map[string]usage.Usage
 

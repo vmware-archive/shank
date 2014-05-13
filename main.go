@@ -10,9 +10,9 @@ import (
 
 	"github.com/codegangsta/cli"
 
+	"github.com/cloudfoundry-incubator/garden/client"
+	"github.com/cloudfoundry-incubator/garden/client/connection"
 	warden "github.com/cloudfoundry-incubator/garden/protocol"
-	"github.com/cloudfoundry-incubator/gordon"
-	"github.com/cloudfoundry-incubator/gordon/connection"
 )
 
 var shankRCFile = filepath.Join(os.Getenv("HOME"), ".shankrc")
@@ -45,8 +45,6 @@ func main() {
 			},
 		},
 
-		generateCommand(reflect.ValueOf(&warden.CopyInRequest{})),
-		generateCommand(reflect.ValueOf(&warden.CopyOutRequest{})),
 		generateCommand(reflect.ValueOf(&warden.CreateRequest{})),
 		generateCommand(reflect.ValueOf(&warden.DestroyRequest{})),
 		generateCommand(reflect.ValueOf(&warden.EchoRequest{})),
@@ -118,13 +116,13 @@ func generateCommand(request reflect.Value) cli.Command {
 				return
 			}
 
-			res, err := conn.RoundTrip(request, response)
+			err = conn.RoundTrip(request, response)
 			if err != nil {
 				fmt.Println("request-response failed:", err)
 				os.Exit(1)
 			}
 
-			encoder.Encode(res)
+			encoder.Encode(response)
 
 			if commandName == "run" {
 				streamProcessPayloads(conn, encoder)
@@ -133,7 +131,7 @@ func generateCommand(request reflect.Value) cli.Command {
 	}
 }
 
-func connectionInfo(c *cli.Context) gordon.ConnectionProvider {
+func connectionInfo(c *cli.Context) client.ConnectionProvider {
 	config := map[string]string{
 		"network": c.GlobalString("network"),
 		"addr":    c.GlobalString("addr"),
@@ -148,23 +146,23 @@ func connectionInfo(c *cli.Context) gordon.ConnectionProvider {
 		}
 	}
 
-	return &gordon.ConnectionInfo{
+	return &connection.Info{
 		Network: config["network"],
 		Addr:    config["addr"],
 	}
 }
 
-func streamProcessPayloads(conn *connection.Connection, encoder *json.Encoder) {
+func streamProcessPayloads(conn connection.Connection, encoder *json.Encoder) {
 	for {
 		payload := &warden.ProcessPayload{}
 
-		res, err := conn.ReadResponse(payload)
+		err := conn.ReadResponse(payload)
 		if err != nil {
 			fmt.Println("stream failed:", err)
 			os.Exit(1)
 		}
 
-		encoder.Encode(res)
+		encoder.Encode(payload)
 
 		if payload.ExitStatus != nil {
 			break
