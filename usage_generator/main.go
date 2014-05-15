@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/vito/shank/usage"
+	"github.com/pivotal-cf-experimental/shank/usage"
 )
 
 var protobufs = flag.String(
@@ -47,7 +47,7 @@ func main() {
 	fmt.Println("package main")
 	fmt.Println("")
 	fmt.Println("import \"encoding/json\"")
-	fmt.Println("import \"github.com/vito/shank/usage\"")
+	fmt.Println("import \"github.com/pivotal-cf-experimental/shank/usage\"")
 	fmt.Println("")
 	fmt.Println("var USAGE map[string]usage.Usage")
 	fmt.Println("")
