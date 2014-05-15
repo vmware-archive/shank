@@ -19,8 +19,6 @@ func main() {
 	flag.Parse()
 
 	usage := map[string]usage.Usage{
-		"copyIn":         usage.Parse(filepath.Join(*protobufs, "copy_in.proto")),
-		"copyOut":        usage.Parse(filepath.Join(*protobufs, "copy_out.proto")),
 		"create":         usage.Parse(filepath.Join(*protobufs, "create.proto")),
 		"destroy":        usage.Parse(filepath.Join(*protobufs, "destroy.proto")),
 		"echo":           usage.Parse(filepath.Join(*protobufs, "echo.proto")),
@@ -37,6 +35,8 @@ func main() {
 		"attach":         usage.Parse(filepath.Join(*protobufs, "attach.proto")),
 		"stop":           usage.Parse(filepath.Join(*protobufs, "stop.proto")),
 		"capacity":       usage.Parse(filepath.Join(*protobufs, "capacity.proto")),
+		"streamIn":       usage.Parse(filepath.Join(*protobufs, "stream_in.proto")),
+		"streamOut":      usage.Parse(filepath.Join(*protobufs, "stream_out.proto")),
 	}
 
 	enc, err := json.Marshal(usage)

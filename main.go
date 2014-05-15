@@ -1,8 +1,10 @@
 package main
 
 import (
+	"code.google.com/p/gogoprotobuf/proto"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -61,6 +63,8 @@ func main() {
 		generateCommand(reflect.ValueOf(&warden.AttachRequest{})),
 		generateCommand(reflect.ValueOf(&warden.StopRequest{})),
 		generateCommand(reflect.ValueOf(&warden.CapacityRequest{})),
+		generateCommand(reflect.ValueOf(&warden.StreamInRequest{})),
+		generateCommand(reflect.ValueOf(&warden.StreamOutRequest{})),
 	}
 
 	app.Run(os.Args)
@@ -122,6 +126,16 @@ func generateCommand(request reflect.Value) cli.Command {
 				os.Exit(1)
 			}
 
+			if commandName == "streamOut" {
+				streamStreamOut(conn)
+				return
+			}
+
+			if commandName == "streamIn" {
+				streamStreamIn(conn)
+				return
+			}
+
 			encoder.Encode(response)
 
 			if commandName == "run" {
@@ -167,5 +181,65 @@ func streamProcessPayloads(conn connection.Connection, encoder *json.Encoder) {
 		if payload.ExitStatus != nil {
 			break
 		}
+	}
+}
+
+func streamStreamOut(conn connection.Connection) {
+	for {
+		payload := &warden.StreamChunk{}
+
+		err := conn.ReadResponse(payload)
+		if err != nil {
+			fmt.Println("stream failed:", err)
+			os.Exit(1)
+		}
+
+		os.Stdout.Write(payload.GetContent())
+
+		if payload.EOF != nil {
+			break
+		}
+	}
+}
+
+func streamStreamIn(conn connection.Connection) {
+	for {
+		buf := make([]byte, 64*1024)
+
+		n, err := os.Stdin.Read(buf)
+
+		if n > 0 {
+			err := conn.SendMessage(&warden.StreamChunk{
+				Content: buf[:n],
+			})
+			if err != nil {
+				fmt.Println("writing content failed:", err)
+				os.Exit(1)
+			}
+		}
+
+		if err == io.EOF {
+			err := conn.SendMessage(&warden.StreamChunk{
+				EOF: proto.Bool(true),
+			})
+			if err != nil {
+				fmt.Println("writing EOF failed:", err)
+				os.Exit(1)
+			}
+			break
+		}
+
+		if err != nil {
+			fmt.Println("stream interrupted:", err)
+			os.Exit(1)
+		}
+	}
+
+	resp := &warden.StreamInResponse{}
+
+	err := conn.ReadResponse(resp)
+	if err != nil {
+		fmt.Println("stream failed:", err)
+		os.Exit(1)
 	}
 }
